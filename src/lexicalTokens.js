@@ -1,4 +1,4 @@
-export default const tokens = {
+export default {
     ARRAY: 0,
     BOOLEAN: 1,
     BREAK: 2,
@@ -18,6 +18,7 @@ export default const tokens = {
     VAR: 16,
     WHILE: 17,
     COLON: 18,
+
     SEMI_COLON: 19,
     COMMA: 20,
     EQUALS: 21,

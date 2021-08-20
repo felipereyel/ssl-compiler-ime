@@ -1,10 +1,10 @@
-const Lexical = require("./lexical");
-const Syntatical = require("./syntatical");
+import Lexical  from "./lexical.js";
+// import Syntatical  from "./syntatical.js";
 
 export function compile(program) {
-    lexical = Lexical(program);
+    const lexical = new Lexical(program);
     lexical.run();
     
-    // syntatical = Syntatical(lexical)
+    // syntatical = new Syntatical(lexical)
     // syntatical.parse()
 }

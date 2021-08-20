@@ -1,0 +1,8 @@
+function dois(): integer {
+	return 2;
+}
+
+function loka(): integer {
+	var letra: char;
+	letra = dois();
+}

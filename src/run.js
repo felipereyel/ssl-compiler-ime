@@ -1,5 +1,17 @@
-const fs = require('fs');
-const { compile } = require("./compiler");
+import fs from 'fs';
+import { compile } from "./compiler.js";
 
-const program = fs.readFileSync('program.ssl', 'utf8');
+if (!process.argv[2]) {
+  throw new Error("missing file");
+  process.exit();
+}
+
+let program;
+try {
+  program = fs.readFileSync(process.argv[2], 'utf8');
+} catch (e) {
+  console.log(`cant read file ${process.argv[2]}`);
+  process.exit();
+}
+
 compile(program);
