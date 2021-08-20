@@ -3,7 +3,7 @@ import Lexical  from "./lexical.js";
 
 export function compile(program) {
     const lexical = new Lexical(program);
-    lexical.run();
+    return lexical.run();
     
     // syntatical = new Syntatical(lexical)
     // syntatical.parse()
