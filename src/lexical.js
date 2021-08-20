@@ -1,25 +1,31 @@
 import Tokens from "./lexicalTokens.js";
 
-// Key Words
 const key_words = ["array", "boolean", "break", "char", "continue", "do", "else", "false", "function", "if", "integer", "of", "string", "struct", "true", "type", "var", "while"]
 
-// Lexical_Finite_Automaton
-const is_Digit = c => "0123456789".includes(c);
-const is_Alnum = c => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(c);
-const is_Space = c => [String.fromCharCode(10), String.fromCharCode(13), "\f", "\v", "\t"," "].includes(c);
+const isDigit = c => "0123456789".includes(c);
+const isAlnum = c => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(c);
+const isSpace = c => [String.fromCharCode(10), String.fromCharCode(13), "\f", "\v", "\t"," "].includes(c);
 
 export default class Lexical {
-    lexicalError = false
-    next_Char = " "
-    program = ""
+    lexicalError = false;
+    currentLine = 1;
+    
+    //
+    next_Char = " ";
+    programContent = "";
+    v_Ctes = [];
+    identifiers = {};
+    count = 0;
+    secondary_Token = null;
+    ch = 1;
 
-    constructor (program) {
-        this.program = program;
+    constructor (programContent) {
+        this.programContent = programContent;
     }
 
     programRead(n) {
-        const chars = this.program.slice(0, n);
-        this.program = this.program.slice(n);
+        const chars = this.programContent.slice(0, n);
+        this.programContent = this.programContent.slice(n);
         return chars;
     }
 
@@ -37,9 +43,6 @@ export default class Lexical {
         return Tokens.ID;
     }
 
-    // Literals
-    v_Ctes = [];
-
     add_Cte(c) {
         this.v_Ctes.push(c);
         return this.v_Ctes.length - 1;
@@ -49,10 +52,6 @@ export default class Lexical {
         return this.v_Ctes[c];
     }
 
-    // Identifiers
-    identifiers = {};
-    count = 0;
-
     search_Name(name) {
         if (!(name in this.identifiers)) {
             this.identifiers[name] = this.count;
@@ -61,16 +60,12 @@ export default class Lexical {
         return this.identifiers[name];
     }
 
-    secondary_Token = null;
-    line = 1;
-    ch = 1;
-
     next_Token() {
         const sep = "";
         let token;
 
-        while (is_Space(this.next_Char)) {
-            if (this.next_Char == "\n" || this.next_Char == "\r") this.line += 1;
+        while (isSpace(this.next_Char)) {
+            if (this.next_Char == "\n" || this.next_Char == "\r") this.currentLine += 1;
             this.next_Char = this.programRead(1);
             this.ch += 1;
         }
@@ -78,9 +73,9 @@ export default class Lexical {
         if (this.next_Char == "") {
             token = Tokens.EOF;
         }
-        else if (is_Alnum(this.next_Char)) {
+        else if (isAlnum(this.next_Char)) {
             const text_Aux = [];
-            while (is_Alnum(this.next_Char) || this.next_Char == '_') {
+            while (isAlnum(this.next_Char) || this.next_Char == '_') {
                 text_Aux.push(this.next_Char);
                 this.next_Char = this.programRead(1);
                 this.ch += 1;
@@ -91,9 +86,9 @@ export default class Lexical {
                 this.secondary_Token = this.search_Name(text);
             }
         }
-        else if (is_Digit(this.next_Char)) {
+        else if (isDigit(this.next_Char)) {
             const num_Aux = [];
-            while (is_Digit(this.next_Char)) {
+            while (isDigit(this.next_Char)) {
                 num_Aux.push(this.next_Char);
                 this.next_Char = this.programRead(1);
                 this.ch += 1;
@@ -298,7 +293,7 @@ export default class Lexical {
     check_Lexical_Error(token) {
         if (token == Tokens.UNKNOWN) {
             this.lexicalError = true;
-            console.log(`Character ${this.ch + 1} not expected in the line ${this.line}`);
+            console.log(`Character ${this.ch + 1} not expected in the line ${this.currentLine}`);
         }
     }
 
