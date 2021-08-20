@@ -1,12 +1,11 @@
 import Tokens from "./lexicalTokens.js";
 
-
 const isDigit = c => "0123456789".includes(c);
 const isAlnum = c => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(c);
 const isSpace = c => [String.fromCharCode(10), String.fromCharCode(13), "\f", "\v", "\t"," "].includes(c);
 
 export default class Lexical {
-    lexicalError = false;
+    lexicalErrors = [];
     programContent = "";
 
     vConsts = [];
@@ -252,18 +251,31 @@ export default class Lexical {
 
     checkLexicalError(token) {
         if (token == Tokens.UNKNOWN) {
-            this.lexicalError = true;
-            console.log(`Character ${this.currentChar} not expected in the line ${this.currentLine}`);
+            this.lexicalErrors.push({
+                message: "caracter not expected",
+                line: this.currentLine,
+                char: this.currentChar,
+                absoluteChar: this.absoluteCurrentChar,
+            });
         }
     }
 
     run() {
         this.readNextChar();
-        let token_Aux = this.nextToken();
-        while (token_Aux != Tokens.EOF) {
-            this.checkLexicalError(token_Aux);
-            token_Aux = this.nextToken();
+        let token = this.nextToken();
+        while (token != Tokens.EOF) {
+            this.checkLexicalError(token);
+            token = this.nextToken();
         }
-        if (!this.lexicalError) console.log("No lexical errors");
+        this.showResult();
+        return this.lexicalErrors;
+    }
+
+    showResult() {
+        if (!this.lexicalErrors.length) {
+            console.log("There are no lexical errors");
+        } else {
+            console.log(this.lexicalErrors.map(e => `Line ${e.line}, Char ${e.char}: ${e.message}`).join("\n"));
+        }
     }
 }
