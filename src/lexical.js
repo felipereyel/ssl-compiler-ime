@@ -1,6 +1,5 @@
 import Tokens from "./lexicalTokens.js";
 
-const key_words = ["array", "boolean", "break", "char", "continue", "do", "else", "false", "function", "if", "integer", "of", "string", "struct", "true", "type", "var", "while"]
 
 const isDigit = c => "0123456789".includes(c);
 const isAlnum = c => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(c);
@@ -8,301 +7,264 @@ const isSpace = c => [String.fromCharCode(10), String.fromCharCode(13), "\f", "\
 
 export default class Lexical {
     lexicalError = false;
-    currentLine = 1;
-    
-    //
-    next_Char = " ";
     programContent = "";
-    v_Ctes = [];
+
+    vConsts = [];
     identifiers = {};
-    count = 0;
-    secondary_Token = null;
-    ch = 1;
+    count = 0; // check
+    
+    nextChar = " ";
+    currentLine = 1;
+    currentChar = 0;
+    absoluteCurrentChar = 0;
 
     constructor (programContent) {
         this.programContent = programContent;
     }
 
-    programRead(n) {
-        const chars = this.programContent.slice(0, n);
-        this.programContent = this.programContent.slice(n);
-        return chars;
-    }
+    readNextChar() {
+        const char = this.programContent.slice(0, 1);
+        this.programContent = this.programContent.slice(1);
 
-    search_Key_Word(name) {
-        let left = 0
-        let right = key_words.length - 1
-
-        while (left <= right) {
-            const middle = Math.floor((left + right) / 2);
-            if (key_words[middle] == name) return middle;
-            else if (key_words[middle] > name) right = middle - 1;
-            else left = middle + 1;
+        this.absoluteCurrentChar += 1;
+        if (char == "\n" || char == "\r") {
+            this.currentLine += 1;
+            this.currentChar = 0;
+        } else {
+            this.currentChar += 1;
         }
-
-        return Tokens.ID;
+        
+        this.nextChar = char;
     }
 
-    add_Cte(c) {
-        this.v_Ctes.push(c);
-        return this.v_Ctes.length - 1;
+    searchKeyword(name) {
+        const key_words = ["array", "boolean", "break", "char", "continue", "do", "else", "false", "function", "if", "integer", "of", "string", "struct", "true", "type", "var", "while"];
+        const idx = key_words.findIndex(el => el === name);
+        return idx === -1 ? Tokens.ID : idx;
     }
 
-    get_Cte(c) {
-        return this.v_Ctes[c];
+    addConst(c) {
+        this.vConsts.push(c);
+        return this.vConsts.length - 1;
     }
+    
+    getConst(c) {
+        return this.vConsts[c];
+    }// unused
 
-    search_Name(name) {
-        if (!(name in this.identifiers)) {
+    searchName(name) {
+        if (!this.identifiers[name]) {
             this.identifiers[name] = this.count;
             this.count += 1;
         }
         return this.identifiers[name];
     }
 
-    next_Token() {
-        const sep = "";
+    nextToken() {
         let token;
+        let secondaryToken;
 
-        while (isSpace(this.next_Char)) {
-            if (this.next_Char == "\n" || this.next_Char == "\r") this.currentLine += 1;
-            this.next_Char = this.programRead(1);
-            this.ch += 1;
+        while (isSpace(this.nextChar)) {
+            this.readNextChar();
         }
         
-        if (this.next_Char == "") {
+        if (this.nextChar == "") {
             token = Tokens.EOF;
         }
-        else if (isAlnum(this.next_Char)) {
-            const text_Aux = [];
-            while (isAlnum(this.next_Char) || this.next_Char == '_') {
-                text_Aux.push(this.next_Char);
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
+        else if (isAlnum(this.nextChar)) {
+            let text = "";
+            text += this.nextChar;
+            while (isAlnum(this.nextChar) || this.nextChar == '_') {
+                text += this.nextChar;
+                this.readNextChar();
             }
-            const text = text_Aux.join(sep);
-            token = this.search_Key_Word(text);
+            token = this.searchKeyword(text);
             if (token == Tokens.ID) {
-                this.secondary_Token = this.search_Name(text);
+                secondaryToken = this.searchName(text);
             }
         }
-        else if (isDigit(this.next_Char)) {
-            const num_Aux = [];
-            while (isDigit(this.next_Char)) {
-                num_Aux.push(this.next_Char);
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
+        else if (isDigit(this.nextChar)) {
+            let num = "";
+            num += this.nextChar;
+            while (isDigit(this.nextChar)) {
+                num += this.nextChar;
+                this.readNextChar();
             }
-            const num = num_Aux.join(sep);
             token = Tokens.NUMERAL;
-            this.secondary_Token = this.add_Cte(num);
+            secondaryToken = this.addConst(num);
         }
-        else if (this.next_Char == "\"") {
-            const string_Aux = [];
-            string_Aux.push(this.next_Char);
-            this.next_Char = this.programRead(1);
-            this.ch += 1;
-            if (this.next_Char != "\"") {
-                while (this.next_Char!="\"") {
-                    string_Aux.push(this.next_Char);
-                    this.next_Char = this.programRead(1);
-                    this.ch += 1;
+        else if (this.nextChar == "\"") {
+            let string = "";
+            string += this.nextChar;
+            this.readNextChar();
+            if (this.nextChar != "\"") {
+                while (this.nextChar!="\"") {
+                    string += this.nextChar;
+                    this.readNextChar();
                 }
             }
-            string_Aux.push(this.next_Char);
-            this.next_Char = this.programRead(1);
-            this.ch += 1;
-            const string = string_Aux.join(sep);
+            string += this.nextChar;
+            this.readNextChar();
             token = Tokens.STRING;
-            this.secondary_Token = this.add_Cte(string);
+            secondaryToken = this.addConst(string);
         }
         else {
-            if (this.next_Char == "\'") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
+            if (this.nextChar == "\'") {
+                this.readNextChar();
                 token = Tokens.CHARACTER;
-                this.secondary_Token = this.add_Cte(this.next_Char);
-                this.next_Char = this.programRead(2);
-                this.ch += 2;
+                secondaryToken = this.addConst(this.nextChar);
+                this.readNextChar();
+                this.readNextChar();
             }
-            else if (this.next_Char == ":") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
+            else if (this.nextChar == ":") {
+                this.readNextChar();
                 token = Tokens.COLON;
             }
-            else if (this.next_Char == "+") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
-                if (this.next_Char == "+") {
-                    token = Tokens.PLUS_PLUS;
-                    this.next_Char = this.programRead(1);
-                    this.ch += 1;
-                }
-                else {
-                    token = Tokens.PLUS;
-                }
-            }
-            else if (this.next_Char == "-") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
-                if (this.next_Char == "-") {
-                    token = Tokens.MINUS_MINUS;
-                    this.next_Char = this.programRead(1);
-                    this.ch += 1;
-                }
-                else {
-                    token = Tokens.MINUS;
-                }
-            }
-            else if (this.next_Char == ";") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
+            else if (this.nextChar == ";") {
+                this.readNextChar();
                 token = Tokens.SEMI_COLON;
             }
-            else if (this.next_Char == ",") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
+            else if (this.nextChar == ",") {
+                this.readNextChar();
                 token = Tokens.COMMA;
             }
-            else if (this.next_Char == "=") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
-                if (this.next_Char == "=") {
-                    token = Tokens.EQUAL_EQUAL;
-                    this.next_Char = this.programRead(1);
-                    this.ch += 1;
-                }
-                else {
-                    token = Tokens.EQUALS;
-                }
-            }
-            else if (this.next_Char == "[") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
+            else if (this.nextChar == "[") {
+                this.readNextChar();
                 token = Tokens.LEFT_SQUARE;
             }
-            else if (this.next_Char == "]") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
+            else if (this.nextChar == "]") {
+                this.readNextChar();
                 token = Tokens.RIGHT_SQUARE
             }
-            else if (this.next_Char == "{") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
+            else if (this.nextChar == "{") {
+                this.readNextChar();
                 token = Tokens.LEFT_BRACES;
             }
-            else if (this.next_Char == "}") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
+            else if (this.nextChar == "}") {
+                this.readNextChar();
                 token = Tokens.RIGHT_BRACES;
             }
-            else if (this.next_Char == "(") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
+            else if (this.nextChar == "(") {
+                this.readNextChar();
                 token = Tokens.LEFT_PARENTHESIS;
             }
-            else if (this.next_Char == ")") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
+            else if (this.nextChar == ")") {
+                this.readNextChar();
                 token = Tokens.RIGHT_PARENTHESIS;
             }
-            else if (this.next_Char == "&") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
-                if (this.next_Char == "&") {
-                    this.next_Char=this.programRead(1);
-                    this.ch += 1;
+            else if (this.nextChar == "&") {
+                this.readNextChar();
+                if (this.nextChar == "&") {
+                    this.readNextChar(); // revisar
                     token = Tokens.AND;
                 }
                 else {
                     token = Tokens.UNKNOWN;
                 }
             }
-            else if (this.next_Char == "|") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
-                if (this.next_Char == "|") {
-                    this.next_Char = this.programRead(1);
-                    this.ch += 1;
+            else if (this.nextChar == "|") {
+                this.readNextChar();
+                if (this.nextChar == "|") {
+                    this.readNextChar(); // revisar
                     token = Tokens.OR;
                 }
                 else {
                     token = Tokens.UNKNOWN;
                 }
             }
-            else if (this.next_Char == "<") {
-                this.next_Char=this.programRead(1);
-                this.ch += 1;
-                if (this.next_Char == "=") {
-                    token = Tokens.LESS_OR_EQUAL;
-                    this.next_Char = this.programRead(1);
-                    this.ch += 1;
+            else if (this.nextChar == "*") {
+                this.readNextChar();
+                token = Tokens.TIMES;
+            }
+            else if (this.nextChar == "/") {
+                this.readNextChar();
+                token = Tokens.DIVIDE;
+            }
+            else if (this.nextChar == ".") {
+                this.readNextChar();
+                token = Tokens.DOT;        
+            }
+            else if (this.nextChar == "+") {
+                this.readNextChar();
+                if (this.nextChar == "+") {
+                    token = Tokens.PLUS_PLUS;
+                    this.readNextChar(); // revisar?
                 }
                 else {
-                    token = Tokens.LESS_THAN;
+                    token = Tokens.PLUS;
                 }
             }
-            else if (this.next_Char == ">") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
-                if (this.next_Char == "=") {
-                    token = Tokens.GREATER_OR_EQUAL;
-                    this.next_Char = this.programRead(1);
-                    this.ch += 1;
-                }
-                else {
-                    token = Tokens.GREATER_THAN;
-                }
-            }
-            else if (this.next_Char == "!") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
-                if (this.next_Char == "=") {
+            else if (this.nextChar == "!") {
+                this.readNextChar();
+                if (this.nextChar == "=") {
                     token = Tokens.NOT_EQUAL;
-                    this.next_Char = this.programRead(1);
-                    this.ch += 1;
+                    this.readNextChar();
                 }
                 else {
                     token = Tokens.NOT; 
                 }
             }
-            else if (this.next_Char == "*") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
-                token = Tokens.TIMES;
+            else if (this.nextChar == "=") {
+                this.readNextChar();
+                if (this.nextChar == "=") {
+                    token = Tokens.EQUAL_EQUAL;
+                    this.readNextChar();
+                }
+                else {
+                    token = Tokens.EQUALS;
+                }
             }
-            else if (this.next_Char == ".") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
-                token = Tokens.DOT;        
+            else if (this.nextChar == "-") {
+                this.readNextChar();
+                if (this.nextChar == "-") {
+                    token = Tokens.MINUS_MINUS;
+                    this.readNextChar();
+                }
+                else {
+                    token = Tokens.MINUS;
+                }
             }
-            else if (this.next_Char == "/") {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
-                token = Tokens.DIVIDE;
+            else if (this.nextChar == "<") {
+                this.readNextChar();
+                if (this.nextChar == "=") {
+                    token = Tokens.LESS_OR_EQUAL;
+                    this.readNextChar();
+                }
+                else {
+                    token = Tokens.LESS_THAN;
+                }
+            }
+            else if (this.nextChar == ">") {
+                this.readNextChar();
+                if (this.nextChar == "=") {
+                    token = Tokens.GREATER_OR_EQUAL;
+                    this.readNextChar();
+                }
+                else {
+                    token = Tokens.GREATER_THAN;
+                }
             }
             else {
-                this.next_Char = this.programRead(1);
-                this.ch += 1;
+                this.readNextChar();
                 token = Tokens.UNKNOWN;
             }
         }
         return token ;
     }
 
-    check_Lexical_Error(token) {
+    checkLexicalError(token) {
         if (token == Tokens.UNKNOWN) {
             this.lexicalError = true;
-            console.log(`Character ${this.ch + 1} not expected in the line ${this.currentLine}`);
+            console.log(`Character ${this.currentChar} not expected in the line ${this.currentLine}`);
         }
     }
 
     run() {
-        this.next_Char = this.programRead(1);
-        let token_Aux = this.next_Token();
+        this.readNextChar();
+        let token_Aux = this.nextToken();
         while (token_Aux != Tokens.EOF) {
-            this.check_Lexical_Error(token_Aux);
-            token_Aux = this.next_Token();
+            this.checkLexicalError(token_Aux);
+            token_Aux = this.nextToken();
         }
         if (!this.lexicalError) console.log("No lexical errors");
     }
