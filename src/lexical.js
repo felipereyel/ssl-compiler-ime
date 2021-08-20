@@ -11,7 +11,6 @@ export default class Lexical {
 
     vConsts = [];
     identifiers = {};
-    count = 0; // check
     
     nextChar = " ";
     currentLine = 1;
@@ -54,8 +53,7 @@ export default class Lexical {
 
     searchName(name) {
         if (!this.identifiers[name]) {
-            this.identifiers[name] = this.count;
-            this.count += 1;
+            this.identifiers[name] = Object.keys(this.identifiers).length;
         }
         return this.identifiers[name];
     }
