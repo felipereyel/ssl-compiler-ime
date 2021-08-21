@@ -2,7 +2,7 @@ import fs from 'fs';
 import { compile } from "./index.js";
 
 if (!process.argv[2]) {
-  throw new Error("missing file");
+  console.log("missing file");
   process.exit();
 }
 
