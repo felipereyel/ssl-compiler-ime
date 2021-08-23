@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/felipereyel/compilIME#readme",
   "dependencies": {
-    "fs": "^0.0.1-security"
+    "fs": "0.0.1-security"
   },
   "type": "module"
 }
