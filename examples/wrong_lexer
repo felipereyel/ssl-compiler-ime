@@ -2,4 +2,6 @@ function dois(): integer {
 	return 2;
 }
 
-%%
+%%function dois(): integer {
+	return 2;
+}

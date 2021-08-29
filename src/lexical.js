@@ -19,7 +19,7 @@ export default class Lexical {
   programContent = "";
 
   vConsts = [];
-  identifiers = {};
+  identifiers = [];
 
   nextChar = " ";
   currentLine = 1;
@@ -65,25 +65,26 @@ export default class Lexical {
       "type",
       "var",
       "while",
+      "return",
     ];
     const idx = key_words.findIndex((el) => el === name);
     return idx === -1 ? Tokens.ID : idx;
   }
 
-  addConst(c) {
-    this.vConsts.push(c);
+  addConst(type, value) {
+    this.vConsts.push({ type, value });
     return this.vConsts.length - 1;
   }
 
-  getConst(c) {
-    return this.vConsts[c];
-  } // unused
+  // getConst(c) {
+  //   return this.vConsts[c];
+  // }
 
   searchName(name) {
-    if (!this.identifiers[name]) {
-      this.identifiers[name] = Object.keys(this.identifiers).length;
+    if (this.identifiers.findIndex((e) => e == name) == -1) {
+      this.identifiers.push(name);
     }
-    return this.identifiers[name];
+    return this.identifiers.findIndex((e) => e == name);
   }
 
   nextToken() {
@@ -98,7 +99,6 @@ export default class Lexical {
       token = Tokens.EOF;
     } else if (isAlfa(this.nextChar)) {
       let text = "";
-      text += this.nextChar;
       while (isAlfa(this.nextChar) || this.nextChar == "_") {
         text += this.nextChar;
         this.readNextChar();
@@ -109,13 +109,12 @@ export default class Lexical {
       }
     } else if (isDigit(this.nextChar)) {
       let num = "";
-      num += this.nextChar;
       while (isDigit(this.nextChar)) {
         num += this.nextChar;
         this.readNextChar();
       }
       token = Tokens.NUMERAL;
-      secondaryToken = this.addConst(num);
+      secondaryToken = this.addConst("int", num);
     } else if (this.nextChar == '"') {
       let string = "";
       string += this.nextChar;
@@ -129,13 +128,13 @@ export default class Lexical {
       string += this.nextChar;
       this.readNextChar();
       token = Tokens.STRING;
-      secondaryToken = this.addConst(string);
+      secondaryToken = this.addConst("string", string);
     } else {
       if (this.nextChar == "'") {
         this.readNextChar();
         token = Tokens.CHARACTER;
-        secondaryToken = this.addConst(this.nextChar);
-        this.readNextChar();
+        secondaryToken = this.addConst("char", this.nextChar);
+        this.readNextChar(); // pular o '
         this.readNextChar();
       } else if (this.nextChar == ":") {
         this.readNextChar();
@@ -238,8 +237,14 @@ export default class Lexical {
           token = Tokens.GREATER_THAN;
         }
       } else {
-        this.readNextChar();
         token = Tokens.UNKNOWN;
+        this.lexicalErrors.push({
+          message: "unknown caracter",
+          line: this.currentLine,
+          char: this.currentChar,
+          absoluteChar: this.absoluteCurrentChar,
+        });
+        this.readNextChar();
       }
     }
     return [token, secondaryToken];
@@ -250,39 +255,39 @@ export default class Lexical {
     let token, secondaryToken;
     do {
       [token, secondaryToken] = this.nextToken();
-
       this.tokens.push({ token, secondaryToken });
-
-      if (token == Tokens.UNKNOWN) {
-        this.lexicalErrors.push({
-          message: "unknown caracter",
-          line: this.currentLine,
-          char: this.currentChar,
-          absoluteChar: this.absoluteCurrentChar,
-        });
-      }
     } while (token != Tokens.EOF);
   }
 
-  getLogs() {
-    let logs = [];
-
+  getResults() {
+    const logs = [];
     if (this.lexicalErrors.length) {
-      logs = this.lexicalErrors.map(
-        (e) => `Line ${e.line}, Char ${e.char}: ${e.message}`
+      logs.push("There were some lexical errors");
+      logs.push(
+        ...this.lexicalErrors.map(
+          (e) => `Line ${e.line}, Char ${e.char}: ${e.message}`
+        )
       );
     } else {
-      logs = ["There are no lexical errors"];
+      logs.push("There are no lexical errors");
     }
 
-    this.tokens.forEach((t) => {
-      let log = t.token;
-      if (t.secondaryToken) {
-        log += " " + t.secondaryToken;
+    const tokens = this.tokens.map((t) => {
+      let fullToken = t.token;
+      if (t.secondaryToken != null) {
+        fullToken += " " + t.secondaryToken;
       }
-      logs.push(log);
+      return fullToken;
     });
 
-    return logs;
+    const consts = this.vConsts.map(
+      (c, idx) => `Index: ${idx}, Type: ${c.type}, Value: ${c.value}`
+    );
+
+    const identifiers = this.identifiers.map(
+      (c, idx) => `Index: ${idx}, ID: ${c}`
+    );
+
+    return { logs, tokens, consts, identifiers };
   }
 }
