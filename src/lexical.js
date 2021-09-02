@@ -1,5 +1,7 @@
 import Tokens from "./lexicalTokens.js";
 
+const keyByValue = (object, value) =>
+  Object.keys(object).find((key) => object[key] === value);
 const isDigit = (c) => "0123456789".includes(c);
 const isAlfa = (c) =>
   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(c);
@@ -76,15 +78,19 @@ export default class Lexical {
     return this.vConsts.length - 1;
   }
 
-  // getConst(c) {
-  //   return this.vConsts[c];
-  // }
+  getConst(c) {
+    return this.vConsts[c];
+  }
 
   searchName(name) {
     if (this.identifiers.findIndex((e) => e == name) == -1) {
       this.identifiers.push(name);
     }
     return this.identifiers.findIndex((e) => e == name);
+  }
+
+  getName(idx) {
+    return this.identifiers[idx];
   }
 
   nextToken() {
@@ -288,6 +294,18 @@ export default class Lexical {
       (c, idx) => `Index: ${idx}, ID: ${c}`
     );
 
-    return { logs, tokens, consts, identifiers };
+    const readableTokens = this.tokens.map((t) => {
+      let fullToken = keyByValue(Tokens, t.token);
+      if (t.secondaryToken != null) {
+        fullToken +=
+          " > " +
+          (t.token == Tokens.ID
+            ? this.getName(t.secondaryToken)
+            : this.getConst(t.secondaryToken).value);
+      }
+      return fullToken;
+    });
+
+    return { logs, tokens, consts, identifiers, readableTokens };
   }
 }
