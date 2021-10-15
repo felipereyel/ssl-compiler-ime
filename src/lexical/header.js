@@ -1,4 +1,4 @@
-export default {
+export const Tokens = {
   // reserved words
   ARRAY: 0,
   BOOLEAN: 1,
@@ -12,13 +12,13 @@ export default {
   IF: 9,
   INTEGER: 10,
   OF: 11,
-  STRING: 12,
-  STRUCT: 13,
-  TRUE: 14,
-  TYPE: 15,
-  VAR: 16,
-  WHILE: 17,
-  RETURN: 18,
+  RETURN: 12,
+  STRING: 13,
+  STRUCT: 14,
+  TRUE: 15,
+  TYPE: 16,
+  VAR: 17,
+  WHILE: 18,
   // simbolos
   COLON: 19,
   SEMI_COLON: 20,
@@ -50,7 +50,7 @@ export default {
   CHARACTER: 45,
   NUMERAL: 46,
   STRINGVAL: 47,
-  ID: 48,
+  IDT: 48,
   // desconhecido
   UNKNOWN: 49,
   // fim do arquivo

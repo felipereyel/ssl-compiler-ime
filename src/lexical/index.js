@@ -1,4 +1,4 @@
-import Tokens from "./lexicalTokens.js";
+import { Tokens } from "./header.js";
 
 const keyByValue = (object, value) =>
   Object.keys(object).find((key) => object[key] === value);
@@ -28,6 +28,9 @@ export default class Lexical {
   currentChar = 0;
   absoluteCurrentChar = 0;
 
+  token = -1;
+  secondaryToken = -1;
+
   constructor(programContent) {
     this.programContent = programContent;
   }
@@ -48,29 +51,29 @@ export default class Lexical {
   }
 
   searchKeyword(name) {
-    const key_words = [
-      "array",
-      "boolean",
-      "break",
-      "char",
-      "continue",
-      "do",
-      "else",
-      "false",
-      "function",
-      "if",
-      "integer",
-      "of",
-      "string",
-      "struct",
-      "true",
-      "type",
-      "var",
-      "while",
-      "return",
-    ];
-    const idx = key_words.findIndex((el) => el === name);
-    return idx === -1 ? Tokens.ID : idx;
+    const key_words = {
+      array: Tokens.ARRAY,
+      boolean: Tokens.BOOLEAN,
+      break: Tokens.BREAK,
+      char: Tokens.CHAR,
+      continue: Tokens.CONTINUE,
+      do: Tokens.DO,
+      else: Tokens.ELSE,
+      false: Tokens.FALSE,
+      function: Tokens.FUNCTION,
+      if: Tokens.IF,
+      integer: Tokens.INTEGER,
+      of: Tokens.OF,
+      string: Tokens.STRING,
+      struct: Tokens.STRUCT,
+      true: Tokens.TRUE,
+      type: Tokens.TYPE,
+      var: Tokens.VAR,
+      while: Tokens.WHILE,
+      return: Tokens.RETURN,
+    };
+    const idx = key_words[name];
+    return idx == undefined ? Tokens.IDT : idx;
   }
 
   addConst(type, value) {
@@ -94,24 +97,21 @@ export default class Lexical {
   }
 
   nextToken() {
-    let token;
-    let secondaryToken;
-
     while (isSpace(this.nextChar)) {
       this.readNextChar();
     }
 
     if (this.nextChar == "") {
-      token = Tokens.EOF;
+      this.token = Tokens.EOF;
     } else if (isAlfa(this.nextChar)) {
       let text = "";
       while (isAlfa(this.nextChar) || this.nextChar == "_") {
         text += this.nextChar;
         this.readNextChar();
       }
-      token = this.searchKeyword(text);
-      if (token == Tokens.ID) {
-        secondaryToken = this.searchName(text);
+      this.token = this.searchKeyword(text);
+      if (this.token == Tokens.IDT) {
+        this.secondaryToken = this.searchName(text);
       }
     } else if (isDigit(this.nextChar)) {
       let num = "";
@@ -119,8 +119,8 @@ export default class Lexical {
         num += this.nextChar;
         this.readNextChar();
       }
-      token = Tokens.NUMERAL;
-      secondaryToken = this.addConst("int", num);
+      this.token = Tokens.NUMERAL;
+      this.secondaryToken = this.addConst("int", num);
     } else if (this.nextChar == '"') {
       let string = "";
       string += this.nextChar;
@@ -133,117 +133,117 @@ export default class Lexical {
       }
       string += this.nextChar;
       this.readNextChar();
-      token = Tokens.STRING;
-      secondaryToken = this.addConst("string", string);
+      this.token = Tokens.STRING;
+      this.secondaryToken = this.addConst("string", string);
     } else {
       if (this.nextChar == "'") {
         this.readNextChar();
-        token = Tokens.CHARACTER;
-        secondaryToken = this.addConst("char", this.nextChar);
+        this.token = Tokens.CHARACTER;
+        this.secondaryToken = this.addConst("char", this.nextChar);
         this.readNextChar(); // pular o '
         this.readNextChar();
       } else if (this.nextChar == ":") {
         this.readNextChar();
-        token = Tokens.COLON;
+        this.token = Tokens.COLON;
       } else if (this.nextChar == ";") {
         this.readNextChar();
-        token = Tokens.SEMI_COLON;
+        this.token = Tokens.SEMI_COLON;
       } else if (this.nextChar == ",") {
         this.readNextChar();
-        token = Tokens.COMMA;
+        this.token = Tokens.COMMA;
       } else if (this.nextChar == "[") {
         this.readNextChar();
-        token = Tokens.LEFT_SQUARE;
+        this.token = Tokens.LEFT_SQUARE;
       } else if (this.nextChar == "]") {
         this.readNextChar();
-        token = Tokens.RIGHT_SQUARE;
+        this.token = Tokens.RIGHT_SQUARE;
       } else if (this.nextChar == "{") {
         this.readNextChar();
-        token = Tokens.LEFT_BRACES;
+        this.token = Tokens.LEFT_BRACES;
       } else if (this.nextChar == "}") {
         this.readNextChar();
-        token = Tokens.RIGHT_BRACES;
+        this.token = Tokens.RIGHT_BRACES;
       } else if (this.nextChar == "(") {
         this.readNextChar();
-        token = Tokens.LEFT_PARENTHESIS;
+        this.token = Tokens.LEFT_PARENTHESIS;
       } else if (this.nextChar == ")") {
         this.readNextChar();
-        token = Tokens.RIGHT_PARENTHESIS;
+        this.token = Tokens.RIGHT_PARENTHESIS;
       } else if (this.nextChar == "&") {
         this.readNextChar();
         if (this.nextChar == "&") {
           this.readNextChar(); // revisar
-          token = Tokens.AND;
+          this.token = Tokens.AND;
         } else {
-          token = Tokens.UNKNOWN;
+          this.token = Tokens.UNKNOWN;
         }
       } else if (this.nextChar == "|") {
         this.readNextChar();
         if (this.nextChar == "|") {
           this.readNextChar(); // revisar
-          token = Tokens.OR;
+          this.token = Tokens.OR;
         } else {
-          token = Tokens.UNKNOWN;
+          this.token = Tokens.UNKNOWN;
         }
       } else if (this.nextChar == "*") {
         this.readNextChar();
-        token = Tokens.TIMES;
+        this.token = Tokens.TIMES;
       } else if (this.nextChar == "/") {
         this.readNextChar();
-        token = Tokens.DIVIDE;
+        this.token = Tokens.DIVIDE;
       } else if (this.nextChar == ".") {
         this.readNextChar();
-        token = Tokens.DOT;
+        this.token = Tokens.DOT;
       } else if (this.nextChar == "+") {
         this.readNextChar();
         if (this.nextChar == "+") {
-          token = Tokens.PLUS_PLUS;
+          this.token = Tokens.PLUS_PLUS;
           this.readNextChar(); // revisar?
         } else {
-          token = Tokens.PLUS;
+          this.token = Tokens.PLUS;
         }
       } else if (this.nextChar == "!") {
         this.readNextChar();
         if (this.nextChar == "=") {
-          token = Tokens.NOT_EQUAL;
+          this.token = Tokens.NOT_EQUAL;
           this.readNextChar();
         } else {
-          token = Tokens.NOT;
+          this.token = Tokens.NOT;
         }
       } else if (this.nextChar == "=") {
         this.readNextChar();
         if (this.nextChar == "=") {
-          token = Tokens.EQUAL_EQUAL;
+          this.token = Tokens.EQUAL_EQUAL;
           this.readNextChar();
         } else {
-          token = Tokens.EQUALS;
+          this.token = Tokens.EQUALS;
         }
       } else if (this.nextChar == "-") {
         this.readNextChar();
         if (this.nextChar == "-") {
-          token = Tokens.MINUS_MINUS;
+          this.token = Tokens.MINUS_MINUS;
           this.readNextChar();
         } else {
-          token = Tokens.MINUS;
+          this.token = Tokens.MINUS;
         }
       } else if (this.nextChar == "<") {
         this.readNextChar();
         if (this.nextChar == "=") {
-          token = Tokens.LESS_OR_EQUAL;
+          this.token = Tokens.LESS_OR_EQUAL;
           this.readNextChar();
         } else {
-          token = Tokens.LESS_THAN;
+          this.token = Tokens.LESS_THAN;
         }
       } else if (this.nextChar == ">") {
         this.readNextChar();
         if (this.nextChar == "=") {
-          token = Tokens.GREATER_OR_EQUAL;
+          this.token = Tokens.GREATER_OR_EQUAL;
           this.readNextChar();
         } else {
-          token = Tokens.GREATER_THAN;
+          this.token = Tokens.GREATER_THAN;
         }
       } else {
-        token = Tokens.UNKNOWN;
+        this.token = Tokens.UNKNOWN;
         this.lexicalErrors.push({
           message: "unknown caracter",
           line: this.currentLine,
@@ -253,7 +253,14 @@ export default class Lexical {
         this.readNextChar();
       }
     }
-    return [token, secondaryToken];
+    return [this.token, this.secondaryToken];
+  }
+
+  lexicalCheck(token) {
+    if (token == Tokens.UNKNOWN) {
+      this.lexicalError.push({ message: "unknown caracter checked" });
+      print(`Character ${self.ch + 1} not expected in the line ${self.line}`);
+    }
   }
 
   run() {
@@ -278,14 +285,6 @@ export default class Lexical {
       logs.push("There are no lexical errors");
     }
 
-    const tokens = this.tokens.map((t) => {
-      let fullToken = t.token;
-      if (t.secondaryToken != null) {
-        fullToken += " " + t.secondaryToken;
-      }
-      return fullToken;
-    });
-
     const consts = this.vConsts.map(
       (c, idx) => `Index: ${idx}, Type: ${c.type}, Value: ${c.value}`
     );
@@ -294,18 +293,6 @@ export default class Lexical {
       (c, idx) => `Index: ${idx}, ID: ${c}`
     );
 
-    const readableTokens = this.tokens.map((t) => {
-      let fullToken = keyByValue(Tokens, t.token);
-      if (t.secondaryToken != null) {
-        fullToken +=
-          " > " +
-          (t.token == Tokens.ID
-            ? this.getName(t.secondaryToken)
-            : this.getConst(t.secondaryToken).value);
-      }
-      return fullToken;
-    });
-
-    return { logs, tokens, consts, identifiers, readableTokens };
+    return { logs, consts, identifiers };
   }
 }
